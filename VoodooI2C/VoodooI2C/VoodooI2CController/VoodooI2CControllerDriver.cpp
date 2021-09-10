@@ -28,11 +28,18 @@ IOReturn VoodooI2CControllerDriver::getBusConfig() {
     bus_device.transaction_fifo_depth = 32;
     bus_device.receive_fifo_depth = 32;
 
-    if (nub->getACPIParams((const char*)"SSCN", &bus_device.acpi_config.ss_hcnt, &bus_device.acpi_config.ss_lcnt, NULL) != kIOReturnSuccess)
+    if (nub->getACPIParams((const char*)"SSCN", &bus_device.acpi_config.ss_hcnt, &bus_device.acpi_config.ss_lcnt, NULL) != kIOReturnSuccess) {
+        bus_device.acpi_config.ss_hcnt = 0x01b0;
+        bus_device.acpi_config.ss_lcnt = 0x01fb;
         error = true;
+    }
 
-    if (nub->getACPIParams((const char*)"FMCN", &bus_device.acpi_config.fs_hcnt, &bus_device.acpi_config.fs_lcnt, &bus_device.acpi_config.sda_hold) != kIOReturnSuccess)
+    if (nub->getACPIParams((const char*)"FMCN", &bus_device.acpi_config.fs_hcnt, &bus_device.acpi_config.fs_lcnt, &bus_device.acpi_config.sda_hold) != kIOReturnSuccess) {
+        bus_device.acpi_config.fs_hcnt = 0x48;
+        bus_device.acpi_config.fs_lcnt = 0xa0;
+        bus_device.acpi_config.sda_hold = 0x9;
         error = true;
+    }
 
     if (error)
         return kIOReturnNotFound;
@@ -466,11 +473,6 @@ bool VoodooI2CControllerDriver::start(IOService* provider) {
 
     if (getBusConfig() != kIOReturnSuccess) {
         IOLog("%s::%s Warning: Error getting bus config, using defaults where necessary\n", getName(), bus_device.name);
-        bus_device.acpi_config.ss_hcnt = 0x01b0;
-        bus_device.acpi_config.fs_hcnt = 0x48;
-        bus_device.acpi_config.ss_lcnt = 0x01fb;
-        bus_device.acpi_config.fs_lcnt = 0xa0;
-        bus_device.acpi_config.sda_hold = 0x9;
     } else {
         IOLog("%s::%s Got bus configuration values\n", getName(), bus_device.name);
     }
